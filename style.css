@@ -22,6 +22,11 @@ html,body{
     border-radius: 15px;
     border: solid #7d7878;
 }
+.lang-change{
+    width: 300px;
+    height: 30px;
+    border-radius: 10px;
+}
 h2{
     color: #a9a0a0;
     border-radius: 2px;
@@ -41,3 +46,4 @@ button{
 button:hover{
     cursor:pointer;
 }
+
