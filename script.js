@@ -1,45 +1,57 @@
-function convert() {
-    const inputText = document.getElementById("inputtext").value;
-    const selectedLang = document.getElementById("selectlan").value;
-    const utterance = new (window.SpeechSynthesisUtterance || window.webkitSpeechSynthesisUtterance)(inputText);
-    const synth = window.speechSynthesis || window.webkitSpeechSynthesis;
+const synth = window.speechSynthesis;
+const selectLan = document.getElementById("selectlan");
+const inputTextArea = document.getElementById("inputtext");
 
-    // Check if the input text is empty
-    if(inputText.trim()===""){
-        alert("Type something ");
+// 1. Function to populate the dropdown dynamically
+function populateVoiceList() {
+    const voices = synth.getVoices();
+    
+    // Clear existing options
+    selectLan.innerHTML = '';
+
+    voices.forEach((voice) => {
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        
+        // Use the voice URI or name as the value for better matching
+        option.setAttribute('data-lang', voice.lang);
+        option.setAttribute('data-name', voice.name);
+        selectLan.appendChild(option);
+    });
+}
+
+// Execute population
+populateVoiceList();
+if (synth.onvoiceschanged !== undefined) {
+    synth.onvoiceschanged = populateVoiceList;
+}
+
+// 2. The Conversion Function
+function convert() {
+    const inputText = inputTextArea.value.trim();
+    
+    if (!inputText) {
+        alert("Please type something first!");
         return;
     }
-    // Check if the selected language is available
-    const voices = window.speechSynthesis.getVoices();
-    const voice = voices.find(v => v.lang === selectedLang);
 
-    if (voice) {
-        utterance.voice = voice;
-        utterance.lang = selectedLang;
-    } else {
-        // Fallback to default voice if the selected language is not available
-        utterance.lang = 'en-US';
-        alert("The selected language is not supported. Using default language: English.");
+    // Cancel any current speech to start fresh
+    synth.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(inputText);
+    const selectedOption = selectLan.selectedOptions[0];
+    
+    // Find the actual voice object based on the selected name
+    const voices = synth.getVoices();
+    const selectedVoice = voices.find(v => v.name === selectedOption.getAttribute('data-name'));
+
+    if (selectedVoice) {
+        utterance.voice = selectedVoice;
     }
 
-   // Check if the browser supports speech synthesis
-   if (synth) {
+    // Optional: Add event listeners for UX
+    utterance.onend = () => console.log("Finished speaking.");
+    utterance.onerror = (err) => console.error("Speech error:", err);
+
     synth.speak(utterance);
-} else {
-    alert("Your browser does not support text-to-voice conversion.");
 }
-}
-
-// Populate voices once they are loaded
-(window.speechSynthesis || window.webkitSpeechSynthesis).onvoiceschanged = function() {
-    const selectLan = document.getElementById("selectlan");
-    const voices = (window.speechSynthesis || window.webkitSpeechSynthesis).getVoices();
-
-    //this will remove all the options from the select
-    for (let i = 0; i < selectLan.options.length; i++) {
-        const optionValue = selectLan.options[i].value;
-        if (!voices.some(voice => voice.lang === optionValue)) {
-            selectLan.options[i].disabled = true;
-        }
-    }
-};
